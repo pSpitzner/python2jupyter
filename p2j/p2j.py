@@ -22,6 +22,7 @@ UNINDENT_BLOCK_COMMENTS = True
 
 # optionall, place a google colab badge in the beginning
 ADD_GOOGLE_COLAB_BADGE = True
+COLAB_REQUIREMENTS = "!pip install git+https://github.com/Priesemann-Group/covid19_inference.git"
 
 def p2j(source_filename, target_filename, overwrite):
     """Convert Python scripts to Jupyter notebooks.
@@ -175,8 +176,9 @@ def p2j(source_filename, target_filename, overwrite):
     # add the google colab badge
     if ADD_GOOGLE_COLAB_BADGE:
         MARKDOWN["source"] = [colab_badge(target_filename)]
-        # cells.append(dict(MARKDOWN))
-        cells = [dict(MARKDOWN)] + cells
+        # dirty, our requirement
+        CODE["source"] = [COLAB_REQUIREMENTS]
+        cells = [dict(MARKDOWN), dict(CODE)] + cells
 
     # Finalise the contents of notebook
     final["cells"] = cells

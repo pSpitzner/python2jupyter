@@ -15,7 +15,7 @@ EIGHT_SPACES = "{:<8}".format("")
 TWELVE_SPACES = "{:<12}".format("")
 
 # do we want to parse single line `#` comments as md?
-NO_ONE_LINE_COMMENTS = False
+NO_ONE_LINE_COMMENTS = True
 
 # whether to undindent block comments so they are parsed with markdown
 UNINDENT_BLOCK_COMMENTS = True

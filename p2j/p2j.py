@@ -14,6 +14,14 @@ FOUR_SPACES = "{:<4}".format("")
 EIGHT_SPACES = "{:<8}".format("")
 TWELVE_SPACES = "{:<12}".format("")
 
+# do we want to parse single line `#` comments as md?
+NO_ONE_LINE_COMMENTS = False
+
+# whether to undindent block comments so they are parsed with markdown
+UNINDENT_BLOCK_COMMENTS = True
+
+# optionall, place a google colab badge in the beginning
+ADD_GOOGLE_COLAB_BADGE = True
 
 def p2j(source_filename, target_filename, overwrite):
     """Convert Python scripts to Jupyter notebooks.
@@ -26,7 +34,7 @@ def p2j(source_filename, target_filename, overwrite):
 
     target_filename = _check_files(
         source_filename, target_filename, overwrite, conversion="p2j")
-    
+
     # Check if source file exists and read
     try:
         with open(source_filename, 'r') as infile:
@@ -73,7 +81,8 @@ def p2j(source_filename, target_filename, overwrite):
             line.startswith("# coding=") or line.startswith("##") or \
             line.startswith("# FIXME") or line.startswith("#FIXME") or \
             line.startswith("# TODO") or line.startswith("#TODO") or \
-            line.startswith("# This Python file uses the following encoding:")
+            line.startswith("# This Python file uses the following encoding:") or \
+            NO_ONE_LINE_COMMENTS
         is_end_of_code = i == num_lines-1
         starts_with_hash = line.startswith("#")
 
@@ -104,10 +113,17 @@ def p2j(source_filename, target_filename, overwrite):
                 replace(TRIPLE_QUOTES[1], "\n")
 
             if not is_block_comment:
+                # remove `#` from comments
                 if len(buffer) > 1:
                     buffer = buffer[2:] if buffer[1].isspace() else buffer[1:]
                 else:
                     buffer = ""
+
+            if is_block_comment and UNINDENT_BLOCK_COMMENTS:
+                # this is dirty, remove first four white spaces
+                if buffer[0:4] == "    ":
+                    buffer = buffer[4:]
+
 
             # Wrap this sub-paragraph as a markdown cell if
             # next line is end of code OR
@@ -121,7 +137,10 @@ def p2j(source_filename, target_filename, overwrite):
                 arr = []
                 is_running_comment = False
             else:
-                buffer = buffer + "<br>\n"
+                if is_block_comment and next_is_nothing:
+                    buffer = buffer + "\n\n"
+                else:
+                    buffer = buffer + "\n"
                 arr.append("{}".format(buffer))
                 is_running_comment = True
                 continue
@@ -153,6 +172,12 @@ def p2j(source_filename, target_filename, overwrite):
                 is_running_code = True
                 continue
 
+    # add the google colab badge
+    if ADD_GOOGLE_COLAB_BADGE:
+        MARKDOWN["source"] = [colab_badge(target_filename)]
+        # cells.append(dict(MARKDOWN))
+        cells = [dict(MARKDOWN)] + cells
+
     # Finalise the contents of notebook
     final["cells"] = cells
     final.update(MISC)
@@ -160,7 +185,7 @@ def p2j(source_filename, target_filename, overwrite):
     # Write JSON to target file
     with open(target_filename, 'w') as outfile:
         json.dump(final, outfile)
-        print("Notebook {} written.".format(target_filename))
+        print("Notebook written to {}".format(target_filename))
 
 
 def _check_files(source_file, target_file, overwrite, conversion):
@@ -233,6 +258,25 @@ def j2p(source_filename, target_filename, overwrite):
         outfile.write(final)
         print("Python script {} written.".format(target_filename))
 
+
+def _git_url(file_path):
+    import subprocess as sp
+    # this get's us the git base directory, need to append the filename of ipynb
+    output = sp.getoutput(f'{HERE}/git_url.sh {file_path}')
+    # replace prefix if cloned via ssh
+    output = output.replace('git@github.com:', "https://github.com/")
+    return output
+
+def colab_badge(file_path):
+    """
+        take the target file path (ipynb) and add a badge for google colab
+    """
+    url = _git_url(file_path) + os.path.basename(file_path)
+    print(f"Generating google colab badge for {url}")
+    url = url.replace("https://github.com/", "https://colab.research.google.com/github/")
+    badge = f"[![Open In Colab]" + \
+        f"(https://colab.research.google.com/assets/colab-badge.svg)]({url})"
+    return badge
 
 def main():
     """Parse arguments and perform file checking"""

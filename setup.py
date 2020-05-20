@@ -5,7 +5,7 @@ import os
 from setuptools import setup
 
 # Package meta-data.
-VERSION = "1.3.3"
+VERSION = "1.3.4"
 DESCRIPTION = "p2j: Convert Python scripts to Jupyter notebook with minimal intervention"
 
 # Import the README and use it as the long-description.
@@ -42,6 +42,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6'
     ],
+    package_data={"p2j":["*.sh"]},
     keywords='convert python jupyter notebook script',
     packages=['p2j'],
     include_package_data=True

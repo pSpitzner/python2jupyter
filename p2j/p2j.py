@@ -22,7 +22,6 @@ UNINDENT_BLOCK_COMMENTS = True
 
 # optionall, place a google colab badge in the beginning
 ADD_GOOGLE_COLAB_BADGE = True
-COLAB_REQUIREMENTS = "!pip install git+https://github.com/Priesemann-Group/covid19_inference.git"
 
 def p2j(source_filename, target_filename, overwrite):
     """Convert Python scripts to Jupyter notebooks.
@@ -177,7 +176,9 @@ def p2j(source_filename, target_filename, overwrite):
     if ADD_GOOGLE_COLAB_BADGE:
         MARKDOWN["source"] = [colab_badge(target_filename)]
         # dirty, our requirement
-        CODE["source"] = [COLAB_REQUIREMENTS]
+        CODE["source"] = [
+        f"!pip install git+https://github.com/Priesemann-Group/covid19_inference.git@{_git_branch(target_filename)}"
+        ]
         cells = [dict(MARKDOWN), dict(CODE)] + cells
 
     # Finalise the contents of notebook
@@ -261,7 +262,7 @@ def j2p(source_filename, target_filename, overwrite):
         print("Python script {} written.".format(target_filename))
 
 
-def _git_url(file_path):
+def _git_dir_url(file_path):
     import subprocess as sp
     # this get's us the git base directory, need to append the filename of ipynb
     output = sp.getoutput(f'{HERE}/git_url.sh {file_path}')
@@ -269,11 +270,17 @@ def _git_url(file_path):
     output = output.replace('git@github.com:', "https://github.com/")
     return output
 
+def _git_branch(file_path):
+    import subprocess as sp
+    # this get's us the git base directory, need to append the filename of ipynb
+    output = sp.getoutput(f'{HERE}/git_branch.sh {file_path}')
+    return output
+
 def colab_badge(file_path):
     """
         take the target file path (ipynb) and add a badge for google colab
     """
-    url = _git_url(file_path) + os.path.basename(file_path)
+    url = _git_dir_url(file_path) + os.path.basename(file_path)
     print(f"Generating google colab badge for {url}")
     url = url.replace("https://github.com/", "https://colab.research.google.com/github/")
     badge = f"[![Open In Colab]" + \
